@@ -26,13 +26,13 @@ pyn = Pynta(path="/home/shikim/pynta_blodgett/production/han-qe",launchpad_path=
                TS_opt_software_kwargs={"conv_thr":1e-11}, 
                lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
                bonding_software_kwargs={"contrl":{'scftyp':'rhf','runtyp':'energy','local':'svd','mult':'1','exetyp':'run','ispher':'1',
-                                                'icharg':'0'}
-                                        "guess":{'guess':'huckel'}
-                                        "system":{'mwords':'300'}
-                                        "basis":{'gbasis':'midi'}
-                                        "scf":{'fdiff':False, 'diis':True, 'dirscf':True, 'vvo':True, 'damp':True}
-                                        "local":{'orient':True}
-                                        "data":{'','pynta':'bonding analysis','c1'}
+                                                'icharg':'0'},
+                                        "guess":{'guess':'huckel'},
+                                        "system":{'mwords':'300'},
+                                        "basis":{'gbasis':'midi'},
+                                        "scf":{'fdiff':False, 'diis':True, 'dirscf':True, 'vvo':True, 'damp':True},
+                                        "local":{'orient':True},
+                                        "data":{'','pynta':'bonding analysis','c1'},
                             "command": '/home/gamess/rungms -input PREFIX.inp > PREFIX.log'},
                slab_path = "/home/shikim/pynta_blodgett/production/han-qe/slab.xyz",
                )
