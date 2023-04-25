@@ -51,6 +51,10 @@ class CollectTask(FiretaskBase):
     def run_task(self, fw_spec):
         raise NotImplementedError
 
+class BondingAnalysisTask(FiretaskBase):
+    def run_task(self, fw_spec):
+        raise NotImplementedError
+
 @explicit_serialize
 class DoNothingTask(FiretaskBase):
     def run_task(self, fw_spec):
@@ -656,6 +660,72 @@ def TSnudge_firework(xyz,label,forward_path=None,reverse_path=None,spawn_jobs=Fa
             constraints=constraints,ignore_errors=ignore_errors)
         fw = Firework([task],parents=[],name=label+"TSnudge")
         return fw
+
+#==Bonding Analysis Tasks==#
+def GAMESS_firework(xyz,label,out_path=None,spawn_jobs=False,software=None,
+        socket=False,software_kwargs={},opt_kwargs={},run_kwargs={},constraints=[],parents=[],ignore_errors=False,forward=True):
+        if out_path is None: out_path = os.path.join(directory,label+"_irc_gamess.traj")
+        t1 = GAMESSBondingAnalysis(xyz=xyz,label=label,bonding_software=bonding_software,
+            socket=socket,bonding_software_kwargs=bonding_software_kwargs)
+        t2 = FileTransferTask({'files': [{'src': label+'_irc_gamess.traj', 'dest': out_path}], 'mode': 'copy', 'ignore_errors' : ignore_errors})
+        fw = Firework([t1,t2],parents=[],name=label+"_GAMESS",spec={"_priority": 0.5})
+        return fw
+
+@explicit_serialize
+class GAMESSBondingAnalysis(BondingAnalysisTask):
+    required_params = ["xyz","label","bonding_software","bonding_software_kwargs","socket"]
+    optional_params = ["ignore_errors"]
+
+    def run_task(self, fw_spec):
+        errors = []
+        bonding_software_kwargs = deepcopy(self["bonding_software_kwargs"]) if "bonding_software_kwargs" in self.keys() else dict()
+        socket = self["socket"] if "socket" in self.keys() else False
+        if socket:
+            unixsocket = "ase_"+self["bonding_software"].lower()+"_"+self["label"]+"_"+self["xyz"].replace("/","_").replace(".","_")
+            socket_address = os.path.join("/tmp","ipi_"+unixsocket)
+            if "command" in bonding_software_kwargs.keys() and "{unixsocket}" in bonding_software_kwargs["command"]:
+                bonding_software_kwargs["command"] = bonding_software_kwargs["command"].format(unixsocket=unixsocket)
+
+        bonding_software = name_to_ase_software(self["bonding_software"])(**bonding_software_kwargs)
+        ignore_errors = self["ignore_errors"] if "ignore_errors" in self.keys() else False
+
+        label = self["label"]
+        xyz = self['xyz']
+        suffix = os.path.split(xyz)[-1].split(".")[-1]
+
+        try:
+            if suffix == "xyz":
+                sp = read(xyz)
+            elif suffix == "traj": #take last point on trajectory
+                sp = Trajectory(xyz)[-1]
+            else: #assume xyz
+                sp = read(xyz)
+        except Exception as e:
+            if not ignore_errors:
+                raise e
+            else:
+                errors.append(e)
+
+        if socket and os.path.exists(socket_address):
+            os.unlink(socket_address)
+
+        sp.calc = SocketIOCalculator(bonding_software,log=sys.stdout,unixsocket=unixsocket) if socket else bonding_software
+
+        if socket:
+            try:
+                sp.calc.close()
+            except Exception as e:
+                if not ignore_errors:
+                    raise e
+                else:
+                    errors.append(e)
+
+        if len(errors) == 0:
+            pass
+        else:
+            return FWAction(stored_data={"error": errors})
+
+        return FWAction()
 
 @explicit_serialize
 class MolecularTSNudge(FiretaskBase):

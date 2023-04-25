@@ -25,6 +25,7 @@ import logging
 class Pynta:
     def __init__(self,path,rxns_file,surface_type,metal,label,launchpad_path=None,fworker_path=None,
         vacuum=8.0,repeats=[(1,1,1),(3,3,4)],slab_path=None,software="Espresso",socket=False,queue=False,njobs_queue=0,a=None,
+        bonding_software="gamess_us"
         software_kwargs={'kpts': (3, 3, 1), 'tprnfor': True, 'occupations': 'smearing',
                             'smearing':  'marzari-vanderbilt',
                             'degauss': 0.01, 'ecutwfc': 40, 'nosym': True,
@@ -34,6 +35,14 @@ class Pynta:
         software_kwargs_gas=None,
         TS_opt_software_kwargs=None,
         lattice_opt_software_kwargs={'kpts': (25,25,25), 'ecutwfc': 70, 'degauss':0.02, 'mixing_mode': 'plain'},
+        bonding_software_kwargs={"contrl":{'scftyp':'rhf','runtyp':'energy','local':'svd','mult':'1','exetyp':'run','ispher':'1',
+                                            'icharg':'0'}
+                                "guess":{'guess':'huckel'}
+                                "system":{'mwords':'300'}
+                                "basis":{'gbasis':'midi'}
+                                "scf":{'fdiff':False, 'diis':True, 'dirscf':True, 'vvo':True, 'damp':True}
+                                "local":{'orient':True}
+                                "data":{'','pynta':'bonding analysis','c1'}}
         reset_launchpad=False,queue_adapter_path=None,num_jobs=25,max_num_hfsp_opts=None,#max_num_hfsp_opts is mostly for fast testing
         Eharmtol=3.0,Eharmfiltertol=30.0,Ntsmin=5):
 
@@ -50,6 +59,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.software = software
+        self.bonding_software = boonding_software #bonding_software is GAMESS_US
         self.socket = socket
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
@@ -78,6 +88,11 @@ class Pynta:
         if lattice_opt_software_kwargs:
             for key,val in lattice_opt_software_kwargs.items():
                 self.lattice_opt_software_kwargs[key] = val
+#add bonding software keywords
+        self.bonding_software_kwargs = deepcopy(bonding_software_kwargs)
+        if bonding_software_kwargs:
+            for key,val in bonding_software_kwargs.items():
+                self.bonding_sofware_kwargs[keys] = val
 
         self.queue = queue
         self.fworker = None
