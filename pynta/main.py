@@ -59,7 +59,7 @@ class Pynta:
         self.vacuum = vacuum
         self.a = a
         self.software = software
-        self.bonding_software = boonding_software #bonding_software is GAMESS_US
+        self.bonding_software = bonding_software #bonding_software is GAMESS_US
         self.socket = socket
         self.repeats = repeats
         self.path = os.getcwd() if path is None else path
